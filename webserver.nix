@@ -48,7 +48,8 @@ in
   # networking.extraHosts is `types.lines`, so NixOS concatenates definitions
   # from multiple modules by default (no need to worry about overwriting
   # whatever configuration.nix sets) - mkAfter makes that append explicit.
-  networking.extraHosts = lib.mkAfter "127.0.0.1 example.local";
+  # networking.extraHosts = lib.mkAfter "127.0.0.1 example.local";
+  networking.extraHosts = "127.0.0.1 example.local";
 
   # Ensure the vhost document root exists with the right ownership.
   # 'd' creates the dir if missing (and fixes perms/owner if it already exists);
