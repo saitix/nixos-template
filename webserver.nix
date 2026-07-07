@@ -1,12 +1,20 @@
 { config, pkgs, ... }:
 
 let
+  # nixpkgs' ioncube-loader package doesn't mark itself as a zend_extension,
+  # so withExtensions would emit "extension=..." instead of "zend_extension=...".
+  # ionCube itself requires the zend_extension directive (it's a Zend-Engine
+  # extension, not a regular module) - override the derivation to fix that.
+  ioncubeZend = pkgs.php85Extensions.ioncube-loader.overrideAttrs (old: {
+    zendExtension = true;
+  });
+
   # withExtensions passes an attrset { enabled, all }; `enabled` is the default
   # extension list and `all` is the full set of available extensions.
   # Keep the defaults and append ionCube (and any others) from `all`.
   phpWithIoncube = pkgs.php85.withExtensions ({ enabled, all }:
     enabled ++ [
-      all.ioncube-loader
+      ioncubeZend
       # add other extensions you need, e.g. all.curl, all.opcache, ...
     ]);
 in
