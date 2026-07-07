@@ -5,6 +5,9 @@
 { config, lib, pkgs, ... }:
 
 {
+  # Allow unfree packages (required for ioncube-loader and similar proprietary software)
+  nixpkgs.config.allowUnfree = true;
+
   imports =
     [ # Include the results of the hardware scan.
       ./hardware-configuration.nix
