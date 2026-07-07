@@ -69,6 +69,7 @@
 	hdparm
 	htop
 	mc
+  net-tools
   php85
   php85Extensions.ioncube-loader
   psmisc
