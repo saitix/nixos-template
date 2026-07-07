@@ -25,12 +25,17 @@ in
     enable = true;
     adminAddr = "admin@example.com";
 
+    # mod_proxy_fcgi isn't loaded by default; it's required for the
+    # SetHandler "proxy:unix:..." directive below to actually forward
+    # .php requests to PHP-FPM instead of serving them as static files.
+    extraModules = [ "proxy_fcgi" ];
+
     # Example vhost
     virtualHosts."example.local" = {
       documentRoot = "/var/www/example";
       extraConfig = ''
         <FilesMatch "\.php$">
-          SetHandler "proxy:unix:/run/phpfpm/php-fpm.sock|fcgi://localhost/"
+          SetHandler "proxy:unix:/run/phpfpm/example.sock|fcgi://localhost/"
         </FilesMatch>
       '';
     };
