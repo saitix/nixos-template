@@ -27,8 +27,9 @@ in
   networking.firewall.allowedTCPPorts = [ 80 443 ];
 
   # PHP-FPM with ionCube loader
-  services.phpfpm = {
-    enable = true;
+  services.phpfpm.pools.example = {
+    user = "wwwrun";         # or "nginx", "apache", etc., match your httpd user
+    group = "wwwrun";
     phpPackage = phpWithIoncube;
 
     phpOptions = ''
@@ -39,5 +40,14 @@ in
       session.gc_maxlifetime = 21600
       opcache.enable = 0
     '';
+
+    settings = {
+      "listen" = "/run/phpfpm/example.sock";
+      "pm" = "dynamic";
+      "pm.max_children" = 5;
+      "pm.start_servers" = 2;
+      "pm.min_spare_servers" = 1;
+      "pm.max_spare_servers" = 3;
+    };
   };
 }
