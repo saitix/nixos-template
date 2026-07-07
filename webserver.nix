@@ -70,6 +70,12 @@ in
 
     settings = {
       "listen" = "/run/phpfpm/example.sock";
+      # FPM's master process runs as root and creates the socket before
+      # dropping privileges, so it defaults to root:root ownership.
+      # Explicitly hand it to the httpd user/group so Apache can connect.
+      "listen.owner" = "wwwrun";
+      "listen.group" = "wwwrun";
+      "listen.mode" = "0660";
       "pm" = "dynamic";
       "pm.max_children" = 5;
       "pm.start_servers" = 2;
