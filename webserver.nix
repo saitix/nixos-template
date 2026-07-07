@@ -1,4 +1,4 @@
-{ config, pkgs, ... }:
+{ config, lib, pkgs, ... }:
 
 let
   # nixpkgs' ioncube-loader package doesn't mark itself as a zend_extension,
@@ -43,6 +43,12 @@ in
 
   # open firewall
   networking.firewall.allowedTCPPorts = [ 80 443 ];
+    
+  # Add an example.local for httpd tests.
+  # networking.extraHosts is `types.lines`, so NixOS concatenates definitions
+  # from multiple modules by default (no need to worry about overwriting
+  # whatever configuration.nix sets) - mkAfter makes that append explicit.
+  networking.extraHosts = lib.mkAfter "127.0.0.1 example.local";
 
   # Ensure the vhost document root exists with the right ownership.
   # 'd' creates the dir if missing (and fixes perms/owner if it already exists);
