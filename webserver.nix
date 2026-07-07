@@ -39,6 +39,7 @@ in
   networking.firewall.allowedTCPPorts = [ 80 443 ];
 
   # PHP-FPM with ionCube loader
+  # the PHP‑FPM module defines per‑pool systemd units under services.phpfpm.pools.<name>, like phpfpm-example.service
   services.phpfpm.pools.example = {
     user = "wwwrun";         # or "nginx", "apache", etc., match your httpd user
     group = "wwwrun";

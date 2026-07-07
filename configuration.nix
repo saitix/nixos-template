@@ -70,6 +70,7 @@
 	htop
 	mc
   net-tools
+  nmon
   php85
   php85Extensions.ioncube-loader
   psmisc
