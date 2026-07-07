@@ -77,6 +77,7 @@
     mc
     net-tools
     nmon
+    percona-server
     php85
     php85Extensions.ioncube-loader
     psmisc
@@ -101,6 +102,12 @@
 
   #Enable qemu guest agent
   services.qemuGuest.enable = true;
+
+  #Enable percona mysql
+  services.mysql = {
+    enable = true;
+    package = pkgs.percona-server;
+  };
 
   # Open ports in the firewall.
   # networking.firewall.allowedTCPPorts = [ ... ];
