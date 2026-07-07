@@ -19,6 +19,7 @@ let
     ]);
 in
 {
+  ###########################################################################
   # webserver
   services.httpd = {
     enable = true;
@@ -38,6 +39,14 @@ in
   # open firewall
   networking.firewall.allowedTCPPorts = [ 80 443 ];
 
+  # Ensure the vhost document root exists with the right ownership.
+  # 'd' creates the dir if missing (and fixes perms/owner if it already exists);
+  # it does not recurse into or touch existing contents.
+  systemd.tmpfiles.rules = [
+    "d /var/www/example 0755 wwwrun wwwrun -"
+  ];
+
+  ###########################################################################
   # PHP-FPM with ionCube loader
   # the PHP‑FPM module defines per‑pool systemd units under services.phpfpm.pools.<name>, like phpfpm-example.service
   services.phpfpm.pools.example = {
