@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   # nixpkgs' ioncube-loader package doesn't mark itself as a zend_extension,
@@ -12,11 +17,14 @@ let
   # withExtensions passes an attrset { enabled, all }; `enabled` is the default
   # extension list and `all` is the full set of available extensions.
   # Keep the defaults and append ionCube (and any others) from `all`.
-  phpWithIoncube = pkgs.php85.withExtensions ({ enabled, all }:
-    enabled ++ [
+  phpWithIoncube = pkgs.php85.withExtensions (
+    { enabled, all }:
+    enabled
+    ++ [
       ioncubeZend
       # add other extensions you need, e.g. all.curl, all.opcache, ...
-    ]);
+    ]
+  );
 in
 {
   ###########################################################################
@@ -42,13 +50,13 @@ in
   };
 
   # open firewall
-  networking.firewall.allowedTCPPorts = [ 80 443 ];
-    
+  networking.firewall.allowedTCPPorts = [
+    80
+    443
+  ];
+
   # Add an example.local for httpd tests.
   # networking.extraHosts is `types.lines`, so NixOS concatenates definitions
-  # from multiple modules by default (no need to worry about overwriting
-  # whatever configuration.nix sets) - mkAfter makes that append explicit.
-  # networking.extraHosts = lib.mkAfter "127.0.0.1 example.local";
   networking.extraHosts = "127.0.0.1 example.local";
 
   # Ensure the vhost document root exists with the right ownership.
@@ -62,7 +70,7 @@ in
   # PHP-FPM with ionCube loader
   # the PHP‑FPM module defines per‑pool systemd units under services.phpfpm.pools.<name>, like phpfpm-example.service
   services.phpfpm.pools.example = {
-    user = "wwwrun";         # or "nginx", "apache", etc., match your httpd user
+    user = "wwwrun"; # or "nginx", "apache", etc., match your httpd user
     group = "wwwrun";
     phpPackage = phpWithIoncube;
 
@@ -73,6 +81,7 @@ in
       date.timezone = "Europe/Copenhagen"
       session.gc_maxlifetime = 21600
       opcache.enable = 0
+      short_open_tag = On
     '';
 
     settings = {

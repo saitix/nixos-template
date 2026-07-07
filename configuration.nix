@@ -2,17 +2,22 @@
 # your system. Help is available in the configuration.nix(5) man page, on
 # https://search.nixos.org/options and in the NixOS manual (`nixos-help`).
 
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 {
   # Allow unfree packages (required for ioncube-loader and similar proprietary software)
   nixpkgs.config.allowUnfree = true;
 
-  imports =
-    [ # Include the results of the hardware scan.
-      ./hardware-configuration.nix
-      ./webserver.nix
-    ];
+  imports = [
+    # Include the results of the hardware scan.
+    ./hardware-configuration.nix
+    ./webserver.nix
+  ];
 
   # Use the systemd-boot EFI boot loader.
   boot.loader.systemd-boot.enable = true;
@@ -64,21 +69,21 @@
   # List packages installed in system profile.
   # You can use https://search.nixos.org/ to find more packages (and options).
   environment.systemPackages = with pkgs; [
-	apacheHttpd
-  elinks
-	git
-	hdparm
-	htop
-	mc
-  net-tools
-  nmon
-  php85
-  php85Extensions.ioncube-loader
-  psmisc
-	pydf
-	tmux
-	vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
-	wget
+    apacheHttpd
+    elinks
+    git
+    hdparm
+    htop
+    mc
+    net-tools
+    nmon
+    php85
+    php85Extensions.ioncube-loader
+    psmisc
+    pydf
+    tmux
+    vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
+    wget
   ];
 
   # Some programs need SUID wrappers, can be configured further or are
@@ -93,6 +98,9 @@
 
   # Enable the OpenSSH daemon.
   services.openssh.enable = true;
+
+  #Enable qemu guest agent
+  services.qemuGuest.enable = true;
 
   # Open ports in the firewall.
   # networking.firewall.allowedTCPPorts = [ ... ];
@@ -126,4 +134,3 @@
   system.stateVersion = "26.05"; # Did you read the comment?
 
 }
-
