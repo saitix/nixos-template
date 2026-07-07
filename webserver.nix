@@ -1,10 +1,14 @@
 { config, pkgs, ... }:
 
 let
-  phpWithIoncube = pkgs.php85.withExtensions (exts: [
-    exts.ioncube-loader
-    # add other extensions you need, e.g. exts.curl, exts.opcache, ...
-  ]);
+  # withExtensions passes an attrset { enabled, all }; `enabled` is the default
+  # extension list and `all` is the full set of available extensions.
+  # Keep the defaults and append ionCube (and any others) from `all`.
+  phpWithIoncube = pkgs.php85.withExtensions ({ enabled, all }:
+    enabled ++ [
+      all.ioncube-loader
+      # add other extensions you need, e.g. all.curl, all.opcache, ...
+    ]);
 in
 {
   # webserver
