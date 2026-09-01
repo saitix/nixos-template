@@ -98,7 +98,7 @@ if [[ "$FS_TYPE" == "btrfs" ]]; then
   ROOTFS_OPTIONS='
       options = [ "noatime" "compress=zstd" "ssd" "space_cache=v2" ];'
 else
-  ROOTFS_OPTIONS=";"
+  ROOTFS_OPTIONS=""
 fi
 
 # --- confirm -------------------------------------------------------------
@@ -182,8 +182,8 @@ cat > "$HW_CONF" <<EOF
 
   fileSystems."/" =
     { device = "/dev/disk/by-label/$ROOT_LABEL";
-      fsType = "$FS_TYPE";
-    }$ROOTFS_OPTIONS
+      fsType = "$FS_TYPE";$ROOTFS_OPTIONS
+    };
 
   fileSystems."/boot" =
     { device = "/dev/disk/by-label/$BOOT_LABEL";

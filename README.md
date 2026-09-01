@@ -14,7 +14,7 @@ port forwarding (80/443) on an external firewall.
 | `configuration.nix`     | Base system: boot loader, DHCP networking, packages, Percona/MySQL, SSH  |
 | `webserver.nix`         | Apache httpd vhost, PHP-FPM pool with ionCube, ACME/TLS, firewall ports  |
 | `hardware-configuration.nix` | QEMU guest profile + mounts by filesystem LABEL (`root`, `BOOT`) — no UUIDs, works on any disk. |
-| `partition-disk.sh`    | Wipes the target disk, creates the UEFI layout, formats, and rewrites `hardware-configuration.nix` (LABEL= form). |
+| `partition-disk.sh`    | Wipes the target disk, creates the UEFI layout, formats (ext4 or btrfs), and rewrites `hardware-configuration.nix` (LABEL= form). |
 
 ## Key design decisions
 
@@ -73,6 +73,14 @@ Disk layout produced by the script (UEFI, entire disk, no swap):
 
 - partition 1: 512 MiB FAT32 ESP, label `BOOT` → `/boot`
 - partition 2: rest of the disk, ext4, label `root` → `/`
+
+Layout knobs live in the globals at the top of `partition-disk.sh`
+(`BOOT_SIZE`, `FS_TYPE`, labels, mountpoint). The root filesystem can be
+`ext4` (default) or `btrfs` — for btrfs the script formats with
+`mkfs.btrfs` and the generated `hardware-configuration.nix` gains the
+standard optimised mount options
+(`noatime,compress=zstd,ssd,space_cache=v2`). No subvolumes are created;
+add them yourself if you want rollback/snapshot semantics.
 
 ## Post-boot checklist (manual steps)
 
