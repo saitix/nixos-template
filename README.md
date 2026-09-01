@@ -13,7 +13,8 @@ port forwarding (80/443) on an external firewall.
 | ----------------------- | ------------------------------------------------------------------------ |
 | `configuration.nix`     | Base system: boot loader, DHCP networking, packages, Percona/MySQL, SSH  |
 | `webserver.nix`         | Apache httpd vhost, PHP-FPM pool with ionCube, ACME/TLS, firewall ports  |
-| `hardware-configuration.nix` | Generated file: QEMU guest profile + disk/swap by UUID. **Contains UUIDs from the original build machine — must be regenerated (or replaced by a declarative partitioning tool like disko) when recreating from scratch.** |
+| `hardware-configuration.nix` | QEMU guest profile + mounts by filesystem LABEL (`root`, `BOOT`) — no UUIDs, works on any disk. |
+| `partition-disk.sh`    | Wipes the target disk, creates the UEFI layout, formats, and rewrites `hardware-configuration.nix` (LABEL= form). |
 
 ## Key design decisions
 
@@ -51,14 +52,27 @@ port forwarding (80/443) on an external firewall.
 
 ## Deploying
 
+From scratch on a new VM (boot the NixOS minimal ISO, clone this repo):
+
+```sh
+git clone <this-repo> /tmp/nixos-template && cd /tmp/nixos-template
+sudo ./partition-disk.sh /dev/vda --mount   # wipes disk, formats, mounts /mnt
+sudo cp -r . /mnt/etc/nixos                 # or rsync -a --exclude .git . /mnt/etc/nixos/
+sudo nixos-install --root /mnt              # set root password when prompted
+# commit the (identical) rewritten hardware-configuration.nix back to git
+```
+
+On an already-installed system:
+
 ```sh
 # on the target VM (or with NIXOS_CONFIG / -I flags from this repo):
 nixos-rebuild switch
 ```
 
-Recreating from scratch: install NixOS (or use `nixos-anywhere`), regenerate
-`hardware-configuration.nix` on the new disk, copy these files into
-`/etc/nixos/`, fill in the variables, rebuild.
+Disk layout produced by the script (UEFI, entire disk, no swap):
+
+- partition 1: 512 MiB FAT32 ESP, label `BOOT` → `/boot`
+- partition 2: rest of the disk, ext4, label `root` → `/`
 
 ## Post-boot checklist (manual steps)
 
@@ -76,7 +90,6 @@ Recreating from scratch: install NixOS (or use `nixos-anywhere`), regenerate
 
 ## Not included (TODO)
 
-- Declarative disk partitioning (disko) — `hardware-configuration.nix` still
-  carries build-machine UUIDs.
 - WHMCS cron timer.
 - Backup/monitoring.
+- Swap (neither partition nor swapfile) — add a swapfile later if needed.
