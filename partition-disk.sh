@@ -18,9 +18,9 @@ set -euo pipefail
 # Global variables — tweak the layout here.
 # =========================================================================
 BOOT_LABEL="BOOT"     # FAT32 label of the ESP -> /boot
-ROOT_LABEL="root"     # ext4 label of the root filesystem -> /
+ROOT_LABEL="root"     # label of the root filesystem -> /
 BOOT_SIZE="512M"      # size of the ESP (sgdisk syntax, e.g. 512M, 1G)
-FS_TYPE="ext4"        # filesystem for the root partition
+FS_TYPE="ext4"        # root filesystem type: "ext4" or "btrfs"
 MOUNTPOINT="/mnt"     # target mountpoint when --mount is used
 HW_CONF_NAME="hardware-configuration.nix"  # rewritten in-place next to this script
 
@@ -32,8 +32,12 @@ usage() {
   echo ""
   echo "  <disk-device>  entire disk to wipe, e.g. /dev/vda or /dev/sda"
   echo "  --yes          do not ask for confirmation"
-  echo "  --mount        also mount the fresh filesystems under /mnt (/mnt/boot)"
+  echo "  --mount        also mount the fresh filesystems under $MOUNTPOINT ($MOUNTPOINT/boot)"
   echo "                 ready for: nixos-install / copying this repo to /mnt/etc/nixos"
+  echo ""
+  echo "Layout is controlled by the globals at the top of this script:"
+  echo "  BOOT_SIZE=$BOOT_SIZE ESP (FAT32, label $BOOT_LABEL) + rest of disk"
+  echo "  as $FS_TYPE for / (label $ROOT_LABEL). FS_TYPE can be 'ext4' or 'btrfs'."
   exit 1
 }
 
@@ -51,6 +55,11 @@ for arg in "${@:2}"; do
 done
 
 # --- sanity checks -------------------------------------------------------
+
+case "$FS_TYPE" in
+  ext4|btrfs) ;;
+  *) echo "ERROR: FS_TYPE must be 'ext4' or 'btrfs' (got '$FS_TYPE')" >&2; exit 1 ;;
+esac
 
 if [[ $EUID -ne 0 ]]; then
   echo "ERROR: run as root (sudo $0 $DISK)" >&2; exit 1
@@ -81,6 +90,16 @@ else
 fi
 BOOT_PART="${DISK}${P}1"
 ROOT_PART="${DISK}${P}2"
+
+# Mount options for / in the generated hardware-configuration.nix.
+# btrfs gets the standard optimised set (SSD-aware, zstd-compressed,
+# space_cache v2). ext4 needs none.
+if [[ "$FS_TYPE" == "btrfs" ]]; then
+  ROOTFS_OPTIONS='
+      options = [ "noatime" "compress=zstd" "ssd" "space_cache=v2" ];'
+else
+  ROOTFS_OPTIONS=";"
+fi
 
 # --- confirm -------------------------------------------------------------
 
@@ -126,7 +145,10 @@ mkfs.vfat -F 32 -n "$BOOT_LABEL" "$BOOT_PART"
 
 echo ">> Formatting $ROOT_PART ($FS_TYPE, label $ROOT_LABEL)"
 wipefs -a "$ROOT_PART" 2>/dev/null || true
-mkfs.ext4 -q -F -L "$ROOT_LABEL" "$ROOT_PART"
+case "$FS_TYPE" in
+  ext4)  mkfs.ext4 -q -F -L "$ROOT_LABEL" "$ROOT_PART" ;;
+  btrfs) mkfs.btrfs -q -f -L "$ROOT_LABEL" "$ROOT_PART" ;;
+esac
 
 udevadm settle
 
@@ -161,7 +183,7 @@ cat > "$HW_CONF" <<EOF
   fileSystems."/" =
     { device = "/dev/disk/by-label/$ROOT_LABEL";
       fsType = "$FS_TYPE";
-    };
+    }$ROOTFS_OPTIONS
 
   fileSystems."/boot" =
     { device = "/dev/disk/by-label/$BOOT_LABEL";
