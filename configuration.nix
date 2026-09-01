@@ -27,7 +27,8 @@
   # Optional: limit boot entries
   boot.loader.systemd-boot.configurationLimit = 5;
 
-  networking.hostName = "whmcs.example.com"; # TODO: set real hostname
+  networking.hostName = "whmcs"; # TODO: set real hostname
+  networking.domain = "example.com"; #TODO: set the real domain
 
   # Internal-network-only server; external access arrives via port forwarding
   # on the firewall. IP is assigned by DHCP (optionally reserved for this
