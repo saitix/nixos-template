@@ -19,19 +19,26 @@ let
   # includes imap and opcache (both are only defaults for PHP < 8.4/8.5),
   # plus everything else WHMCS needs: curl, gd, xml/dom, soap, mbstring,
   # bcmath, gmp, intl, pdo_mysql (mysqlnd), etc.
+  #
   # nixpkgs' ioncube-loader package doesn't mark itself as a zend_extension,
   # so withExtensions would emit "extension=..." instead of "zend_extension=...".
   # ionCube itself requires the zend_extension directive (it's a Zend-Engine
   # extension, not a regular module) - override the derivation to fix that.
+  #
+  # IMPORTANT: ionCube must be the FIRST entry in php.ini ("The Loader must
+  # appear as the first entry" fatal error otherwise). nixpkgs generates the
+  # ini lines in list order (textClosureList), so ionCube is PREpended here,
+  # not appended — otherwise it lands after opcache's zend_extension line
+  # and php-fpm crash-loops with status 254.
   # Loader 15.5.0 satisfies WHMCS' minimum (14.4.0 for PHP 8.3).
   phpWithIoncube = pkgs.php83.withExtensions (
     { enabled, all }:
-    enabled
-    ++ [
+    [
       (all.ioncube-loader.overrideAttrs (_: {
         zendExtension = true;
       }))
     ]
+    ++ enabled
   );
 in
 {
