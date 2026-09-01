@@ -27,10 +27,17 @@
   # Optional: limit boot entries
   boot.loader.systemd-boot.configurationLimit = 5;
 
-  # networking.hostName = "nixos-test"; # Define your hostname.
+  networking.hostName = "whmcs.example.com"; # TODO: set real hostname
 
-  # Configure network connections interactively with nmcli or nmtui.
-  networking.networkmanager.enable = true;
+  # Internal-network-only server; external access arrives via port forwarding
+  # on the firewall. IP is assigned by DHCP (optionally reserved for this
+  # VM's MAC address on the DHCP server).
+  # Interface names aren't hardcoded so the config works on any NIC:
+  # with scripted networking, useDHCP enables it on all interfaces.
+  networking.useDHCP = true;
+  # If you later want DHCP on a specific interface only, uncomment and set:
+  # networking.useDHCP = false;
+  # networking.interfaces.enp1s0.useDHCP = true;
 
   # Set your time zone.
   time.timeZone = "Europe/Copenhagen";
@@ -67,9 +74,14 @@
   # programs.firefox.enable = true;
 
   # List packages installed in system profile.
-  # You can use https://search.nixos.org/ to find more packages (and options).
+  # Use https://search.nixos.org/ to find packages and options.
+  #
+  # NOTE: the PHP CLI with ionCube is provided by webserver.nix
+  # (environment.systemPackages there). Do NOT add plain `php83` here —
+  # it would put an ionCube-less PHP on PATH that breaks WHMCS cron.
+  # percona-server is pulled in by services.mysql below; only add it here
+  # if you want the `mysql` client CLI on PATH.
   environment.systemPackages = with pkgs; [
-    apacheHttpd
     elinks
     git
     hdparm
@@ -78,8 +90,6 @@
     net-tools
     nmon
     percona-server
-    php85
-    php85Extensions.ioncube-loader
     psmisc
     pydf
     tcpdump
@@ -108,6 +118,32 @@
   services.mysql = {
     enable = true;
     package = pkgs.percona-server;
+    # WHMCS does NOT support MySQL strict mode (STRICT_TRANS_TABLES /
+    # ERROR_FOR_DIVISION_BY_ZERO cause serious problems in WHMCS).
+    # Percona 8.x enables them by default - turn them off.
+    settings.mysqld = {
+      sql-mode = "NO_ENGINE_SUBSTITUTION";
+    };
+
+    # WHMCS database + user. NOTE: ensureUsers creates the MySQL user
+    # with auth_socket (Unix-socket) authentication — usable only by a
+    # same-named UNIX user, which the wwwrun PHP process is not.
+    # After first boot you MUST switch it to password auth before WHMCS
+    # can connect:
+    #   mysql -e "ALTER USER 'whmcs'@'localhost' IDENTIFIED BY '...'; \
+    #             FLUSH PRIVILEGES;"
+    # then put that password in WHMCS configuration.php.
+    ensureDatabases = [ "whmcs" ];
+    ensureUsers = [
+      {
+        name = "whmcs";
+        ensurePermissions = {
+          "whmcs.*" = "SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, INDEX, ALTER, LOCK TABLES, CREATE TEMPORARY TABLES";
+        };
+      }
+    ];
+    # Same socket PDO_MySQL is compiled for (php packages set PHP_MYSQL_SOCK
+    # to this path), so WHMCS's default localhost connection just works.
   };
 
   # Open ports in the firewall.
